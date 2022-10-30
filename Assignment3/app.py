@@ -154,7 +154,10 @@ class Assignment3VPN:
                     # Disabling the button to prevent repeated clicks
                     self.secureButton["state"] = "disabled"
                     # Processing the protocol message
-                    self.prtcl.ProcessReceivedProtocolMessage(cipher_text)
+                    # Added some stuff here so I think everything works smoothly
+                    next = self.prtcl.ProcessReceivedProtocolMessage(cipher_text)
+                    if next != "":
+                        self.conn.send(next.encode())
 
                 # Otherwise, decrypting and showing the messaage
                 else:
@@ -180,7 +183,9 @@ class Assignment3VPN:
 
         # TODO: THIS IS WHERE YOU SHOULD IMPLEMENT THE START OF YOUR MUTUAL AUTHENTICATION AND KEY ESTABLISHMENT PROTOCOL, MODIFY AS YOU SEEM FIT
         init_message = self.prtcl.GetProtocolInitiationMessage()
-        self._SendMessage(init_message)
+        # self._SendMessage(init_message)
+        # Remove the above, but do smt similar
+        self.conn.send(init_message.encode())
 
 
     # Called when SendMessage button is clicked
