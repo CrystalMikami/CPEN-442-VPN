@@ -158,6 +158,9 @@ class Assignment3VPN:
                     next = self.prtcl.ProcessReceivedProtocolMessage(cipher_text)
                     if next != "":
                         self.conn.send(next.encode())
+                    else:
+                        self.sendButton["state"] = "enable"
+                    # Maybe add exception checks?
 
                 # Otherwise, decrypting and showing the messaage
                 else:
@@ -182,6 +185,7 @@ class Assignment3VPN:
         self.secureButton["state"] = "disabled"
 
         # TODO: THIS IS WHERE YOU SHOULD IMPLEMENT THE START OF YOUR MUTUAL AUTHENTICATION AND KEY ESTABLISHMENT PROTOCOL, MODIFY AS YOU SEEM FIT
+        self.prtcl.keyShared = self.sharedSecret
         init_message = self.prtcl.GetProtocolInitiationMessage()
         # self._SendMessage(init_message)
         # Remove the above, but do smt similar
