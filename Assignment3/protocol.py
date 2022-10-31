@@ -85,6 +85,23 @@ class Protocol:
         # Decrypt the encrypted portion and update self.___ values with the information given. If the second message was 
         # recieved, return the third message (same process as if first message was recieved). For the third message, just
         # return "" and call setSessionKey().
+
+        if not (self.IsMessagePartOfProtocol(message)):
+            raise Exception("Message is not part of protocol")
+        msg_no = message[0]
+
+        if msg_no == "potatoProtocol1":
+            self.reciever = message[1]
+            self.RB = message[2]
+            self.DHB = "123123"
+            self.SetSessionKey()
+            to_encypt = [self.sender, self.RA, self.DHA]
+            #assuming Ying Qi creates new function
+            return ["potatoProtocol2", self.EncryptAndProtectMessageONLY(to_encypt), self.hash(self.keySession + self.RB)]
+        elif msg_no == "potatoProtocol2":
+            decrypted = self.DecryptAndVerifyMessage(message[0])
+
+        
         return ""
 
     # Setting the key for the current session
