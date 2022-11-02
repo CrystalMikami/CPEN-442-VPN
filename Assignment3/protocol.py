@@ -1,5 +1,6 @@
 import hashlib
 import random
+import string
 from Crypto.Cipher import AES
 from getmac import get_mac_address as gma
 
@@ -41,7 +42,7 @@ class Protocol:
     # TODO: IMPLEMENT THE LOGIC (MODIFY THE INPUT ARGUMENTS AS YOU SEEM FIT)
     def GetProtocolInitiationMessage(self):
         # Generate RA
-        self.RA = random.randint(0, 2000000)
+        self.RA = self.GenerateStr()
         # Calculate shared key
         self.keyShared = self.HashKey(self, self.secret)
         return "PotatoProtocol1" + self.sender + self.RA
@@ -110,8 +111,10 @@ class Protocol:
         encrypted = EncryptAES(to_encrypt, self.keyShared)
         return "PotatoProtocol2" + encrypted + hashlib.sha256(to_encrypt.encode('utf-8')).hexdigest()
         
+
     def EncryptAES(message, key):
         return AES.new(key, AES.MODE_CBC).encrypt(message)
+
 
     def DecryptAES(message, key):
         return AES.new(key, AES.MODE_CBC).decrypt(message)
@@ -122,11 +125,17 @@ class Protocol:
         self.DHA = pow(self.g, self.DHExponent, mod = self.p)
 
 
+    # Generates a random string of length 8
+    def GenerateStr(self):
+        randStr = ''.join(random.choices(string.ascii_uppercase + string.digits, k = 8))
+        return randStr
+
+
     # Setting the key for the current session
     # TODO: MODIFY AS YOU SEEM FIT
-    def SetSessionKey(self):
-        # Sets session key to H((g^b mod p)^a mod p)
-        DHVal = pow(self.DHB, self.DHExponent, mod = self.p)
+    def SetSessionKey(self, base):
+        # Sets session key to H(g^ab mod p)
+        DHVal = pow(base, self.DHExponent, mod = self.p)
         self.keySession = self.HashKey(self, DHVal)
 
         # Forget DH exponent
