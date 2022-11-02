@@ -70,13 +70,13 @@ class Assignment3VPN:
     def ClientModeSelected(self):
         self.hostName.set("localhost")
         # ADDED since we want client and server to be identified differently
-        self.prtcl.sender = "Alice"
+        self.prtcl.sender = "A"
 
 
     # Handle sever mode selection
     def ServerModeSelected(self):
         # ADDED since we want client and server to be identified differently
-        self.prtcl.sender = "Bob"
+        self.prtcl.sender = "B"
         pass 
 
 
