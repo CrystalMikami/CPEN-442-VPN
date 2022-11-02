@@ -91,9 +91,6 @@ class Protocol:
             self.keyShared = self.hashKey(self, self.secret)
             self.reciever = message[15]
             self.RB = message[16:]
-            #TODO: need g and p in message
-            self.p
-            self.g
             return PrepareProtocolMessage2()
             
         elif message[14] == "2":
@@ -107,7 +104,6 @@ class Protocol:
         self.DHExponent = randint(0, 2000000)
         self.GenerateDHA()
         self.SetSessionKey()
-        #TODO: where is sender set?
         to_encypt = [self.sender, self.RA, self.DHA]
         encrypted = EncryptAES(to_encypt, self.keyShared)
         return "PotatoProtocol2" + encrypted + hashlib.sha256(gma()).hexdigest()
