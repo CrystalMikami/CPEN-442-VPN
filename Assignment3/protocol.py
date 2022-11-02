@@ -1,3 +1,5 @@
+import hashlib
+
 class Protocol:
     # Initializer (Called from app.py)
     # TODO: MODIFY ARGUMENTS AND LOGIC AS YOU SEEM FIT
@@ -30,7 +32,8 @@ class Protocol:
     # TODO: IMPLEMENT THE LOGIC (MODIFY THE INPUT ARGUMENTS AS YOU SEEM FIT)
     def GetProtocolInitiationMessage(self):
         # Remember to set self.RA and self.sender
-        return ""
+        self.RA = randint(0, 2000000)
+        return "PotatoProtocol1Alice," + self.RA
 
 
     # Checking if a received message is part of your protocol (called from app.py)
@@ -56,7 +59,10 @@ class Protocol:
         # NOTE: I think that because both parties will be using the same code, both users will think of themselves
         # as user A. Make sure not to confuse the usage of A and B variables (should always use A instead of B 
         # variables, or else the code will not work properly).
-        return False
+        return (message[0:14] == "PotatoProtocol")
+        
+
+
 
 
     # Processing protocol message

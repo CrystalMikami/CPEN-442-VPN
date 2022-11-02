@@ -175,7 +175,7 @@ class Assignment3VPN:
     # Send data to the other party
     def _SendMessage(self, message):
         plain_text = message
-        cipher_text = self.prtcl.EncryptAndProtectMessage(plain_text)
+        cipher_text = "Message" + self.prtcl.EncryptAndProtectMessage(plain_text) # ADJUSTED so we know if the message is protocol or a regular message
         self.conn.send(cipher_text.encode())
             
 
