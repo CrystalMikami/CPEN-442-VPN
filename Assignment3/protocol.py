@@ -50,6 +50,12 @@ class Protocol:
         # Check if PotatoProtocol is prepended
         return (message[0:14] == "PotatoProtocol")
 
+    # Hashes our key so we can get 256 bits
+    def hashKey(self, thingToHash):
+        # Hash the thingToHash using SHA-256
+
+        return key
+
 
     # Processing protocol message
     # Protocol messages can be of the form: 
