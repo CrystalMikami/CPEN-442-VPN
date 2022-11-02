@@ -51,8 +51,8 @@ class Protocol:
     # Processing protocol message
     # Protocol messages can be of the form: 
     #       "PotatoProtocol1", "Alice", RA
-    #       "PotatoProtocol2", E("Bob", RB, g^b mod p, K), MAC
-    #       "PotatoProtocol3", E("Alice", g^a mod p, K), MAC
+    #       "PotatoProtocol2", E("Bob", RB, g^b mod p, K), H(MAC)
+    #       "PotatoProtocol3", E("Alice", g^a mod p, K), H(MAC)
     # TODO: IMPLMENET THE LOGIC (CALL SetSessionKey ONCE YOU HAVE THE KEY ESTABLISHED)
     # THROW EXCEPTION IF AUTHENTICATION FAILS
     def ProcessReceivedProtocolMessage(self, message):
@@ -87,7 +87,7 @@ class Protocol:
 
     # Encrypting messages
     # Encrypted message is of the form:
-    #       "Message", E("Alice/Bob", msg, msg#, KS), MAC
+    #       "Message", E("Alice/Bob", msg, msg#, KS), H(MAC)
     # TODO: IMPLEMENT ENCRYPTION WITH THE SESSION KEY (ALSO INCLUDE ANY NECESSARY INFO IN THE ENCRYPTED MESSAGE FOR INTEGRITY PROTECTION)
     # RETURN AN ERROR MESSAGE IF INTEGRITY VERITIFCATION OR AUTHENTICATION FAILS
     def EncryptAndProtectMessage(self, plain_text):
@@ -100,13 +100,13 @@ class Protocol:
 
     # Decrypting and verifying messages
     # Encrypted message is of the form:
-    #       "Message", E("Alice/Bob", msg, msg#, KS), MAC
+    #       "Message", E("Alice/Bob", msg, msg#, KS), H(MAC)
     # TODO: IMPLEMENT DECRYPTION AND INTEGRITY CHECK WITH THE SESSION KEY
     # RETURN AN ERROR MESSAGE IF INTEGRITY VERITIFCATION OR AUTHENTICATION FAILS
     def DecryptAndVerifyMessage(self, cipher_text):
         plain_text = cipher_text
         # Remove "Message" from the front
-        # Split into E() and MAC
+        # Split into E() and H(MAC)
         # Verify MAC
         # Decrypt E()
         return plain_text
