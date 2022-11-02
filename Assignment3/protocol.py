@@ -2,6 +2,8 @@ import hashlib
 import random
 import string
 from Crypto.Cipher import AES
+from base64 import b64encode
+from base64 import b64decode
 
 class Protocol:
     # Initializer (Called from app.py)
