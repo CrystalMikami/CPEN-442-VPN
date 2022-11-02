@@ -90,7 +90,9 @@ class Protocol:
         return "PotatoProtocol2" + encrypted + hashlib.sha256(to_encrypt.encode('utf-8')).hexdigest()
 
     def PrepareProtocolMessage3(self):
+        self.DHExponent = random.randint(0, 2000000)
         self.DHA = pow(self.g, self.DHExponent, mod = self.p)
+        self.SetSessionKey(self, self.DHB)
         to_encrypt = self.sender + self.DHA
         encrypted = self.EncryptAES(to_encrypt, self.keyShared)
         return "PotatoProtocol3" + encrypted + hashlib.sha256(to_encrypt.encode('utf-8')).hexdigest()
@@ -142,6 +144,8 @@ class Protocol:
             my_hash = hashlib.sha256(decrypted.encode('utf-8')).hexdigest()
             if my_hash != message[-64:]:
                 raise Exception("Authentication failed")
+            self.DHA = decrypted[9:]
+            self.SetSessionKey(self, self.DHA)
             return ""
 
     
