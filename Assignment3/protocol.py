@@ -34,15 +34,21 @@ class Protocol:
         self.DHB = None
         pass
     
+
+    # Helper functions
+
+    # Generates a random sting to serve as a nonce
     def RandomString(self, stringLength):
-        letters = string.ascii_lowercase
-        return ''.join(random.choice(letters) for i in range(stringLength))
+        choices = string.ascii_uppercase + string.digits
+        return ''.join(random.choice(choices) for i in range(stringLength))
+
 
     # Hashes our key so we can get 256 bits
     def HashKey(self, thingToHash):
         # Hash the thingToHash using SHA-256
         key = hashlib.sha256(thingToHash.encode('utf-8')).hexdigest()
         return key
+
 
     #Protocol functions
 
@@ -65,8 +71,6 @@ class Protocol:
     def IsMessagePartOfProtocol(self, message):
         # Check if PotatoProtocol is prepended
         return (message[0:14] == "PotatoProtocol")
-
-    
 
     
     def EncryptAES(self, message, key):
@@ -130,21 +134,22 @@ class Protocol:
             if my_hash != message[-64:]:
                 raise Exception("Authentication failed")
             self.reciever = decrypted[0]
-            self.RB = decrypted[1:9]
-            self.DHB = decrypted[9:]
-
+            self.RB = decrypted[1:7]
 
 
     
         
+    #Generating g^a mod p
+    def GenerateDHA(self):
+        self.DHA = pow(self.g, self.DHExponent, mod = self.p)
 
 
     # Setting the key for the current session
     # TODO: MODIFY AS YOU SEEM FIT
-    def SetSessionKey(self):
-        # Sets session key to H((g^b mod p)^a mod p)
-        DHVal = pow(self.DHB, self.DHExponent, mod = self.p)
-        self.keySession = self.HashKey(DHVal)
+    def SetSessionKey(self, base):
+        # Sets session key to H(g^ab mod p)
+        DHVal = pow(base, self.DHExponent, mod = self.p)
+        self.keySession = self.HashKey(self, DHVal)
 
         # Forget DH exponent
         self.DHExponent = None
