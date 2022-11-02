@@ -1,7 +1,6 @@
 import hashlib
 import random
 from Crypto.Cipher import AES
-from getmac import get_mac_address as gma
 
 class Protocol:
     # Initializer (Called from app.py)
@@ -34,6 +33,12 @@ class Protocol:
         self.DHB = None
         pass
 
+    # Hashes our key so we can get 256 bits
+    def HashKey(self, thingToHash):
+        # Hash the thingToHash using SHA-256
+        key = hashlib.sha256(thingToHash.encode('utf-8')).hexdigest()
+        return key
+
     #Protocol functions
 
     # Creating the initial message of your protocol (to be send to the other party to bootstrap the protocol)
@@ -43,7 +48,7 @@ class Protocol:
         # Generate RA
         self.RA = random.randint(0, 2000000)
         # Calculate shared key
-        self.keyShared = self.HashKey(self, self.secret)
+        self.keyShared = self.HashKey(self.secret)
         return "PotatoProtocol1" + self.sender + self.RA
 
 
@@ -56,12 +61,23 @@ class Protocol:
         # Check if PotatoProtocol is prepended
         return (message[0:14] == "PotatoProtocol")
 
-    # Hashes our key so we can get 256 bits
-    def HashKey(self, thingToHash):
-        # Hash the thingToHash using SHA-256
-        key = hashlib.sha256(thingToHash.encode('utf-8')).hexdigest()
-        return key
+    
 
+    
+    def EncryptAES(self, message, key):
+        return AES.new(key, AES.MODE_CBC).encrypt(message)
+
+
+    def DecryptAES(self, message, key):
+        return AES.new(key, AES.MODE_CBC).decrypt(message)
+
+
+    def PrepareProtocolMessage2(self):
+        self.DHExponent = random.randint(0, 2000000)
+        self.GenerateDHA()
+        to_encrypt = self.sender + self.RA + self.DHA
+        encrypted = self.EncryptAES(to_encrypt, self.keyShared)
+        return "PotatoProtocol2" + encrypted + hashlib.sha256(to_encrypt.encode('utf-8')).hexdigest()
 
     # Processing protocol message
     # Protocol messages can be of the form: 
@@ -92,31 +108,21 @@ class Protocol:
             raise Exception("Message is not part of protocol")
 
         if message[14] == "1":
-            self.keyShared = self.HashKey(self, self.secret)
+            self.keyShared = self.HashKey(self.secret)
             self.reciever = message[15]
             self.RB = message[16:]
-            return self.PrepareProtocolMessage2(self)
+            return self.PrepareProtocolMessage2()
         elif message[14] == "2":
-            decrypted = DecryptAES(message[15:], self.keyShared)
+            decrypted = self.DecryptAES(message[15:-64], self.keyShared)
+            my_hash = hashlib.sha256(decrypted.encode('utf-8')).hexdigest()
+            if my_hash != message[-64:]:
+                raise Exception("Authentication failed")
+            self.reciever = decrypted[0]
+            self.RB = decrypted[1:7]
 
+
+    
         
-        return ""
-
-
-    def PrepareProtocolMessage2(self):
-        self.DHExponent = random.randint(0, 2000000)
-        self.GenerateDHA()
-        to_encrypt = [self.sender, self.RA, self.DHA]
-        encrypted = EncryptAES(to_encrypt, self.keyShared)
-        return "PotatoProtocol2" + encrypted + hashlib.sha256(to_encrypt.encode('utf-8')).hexdigest()
-        
-    def EncryptAES(message, key):
-        return AES.new(key, AES.MODE_CBC).encrypt(message)
-
-    def DecryptAES(message, key):
-        return AES.new(key, AES.MODE_CBC).decrypt(message)
-
-
     #Generating g^a mod p
     def GenerateDHA(self):
         self.DHA = pow(self.g, self.DHExponent, mod = self.p)
@@ -127,7 +133,7 @@ class Protocol:
     def SetSessionKey(self):
         # Sets session key to H((g^b mod p)^a mod p)
         DHVal = pow(self.DHB, self.DHExponent, mod = self.p)
-        self.keySession = self.HashKey(self, DHVal)
+        self.keySession = self.HashKey(DHVal)
 
         # Forget DH exponent
         self.DHExponent = None
