@@ -33,7 +33,7 @@ class Protocol:
     def GetProtocolInitiationMessage(self):
         # Remember to set self.RA and self.sender
         self.RA = randint(0, 2000000)
-        return "PotatoProtocol1Alice," + self.RA
+        return "PotatoProtocol1" + self.sender + self.RA
 
 
     # Checking if a received message is part of your protocol (called from app.py)
@@ -98,6 +98,8 @@ class Protocol:
     def SetSessionKey(self):
         # Sets session key to (g^b mod p)^a mod p
         self.keySession = pow(self.DHB, self.DHExponent, mod = self.p)
+        # Forget DH exponents
+        self.DHExponent = None
         pass
 
     # Message sending functions
