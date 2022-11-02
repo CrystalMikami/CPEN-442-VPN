@@ -1,4 +1,6 @@
 import hashlib
+from Crypto.Cipher import AES
+from getmac import get_mac_address as gma
 
 class Protocol:
     # Initializer (Called from app.py)
@@ -72,7 +74,42 @@ class Protocol:
         # call setSessionKey().
         #
         # If the authentication fails at any point, throw an EXCEPTION
+
+        if not (self.IsMessagePartOfProtocol(message)):
+            raise Exception("Message is not part of protocol")
+        if message[14] == "1":
+            self.reciever = message[15]
+            self.RB = message[16:]
+            #TODO: need g and p in message
+            self.p
+            self.g
+            return PrepareProtocolMessage2()
+            
+        elif message[14] == "2":
+            decrypted = DecryptAES(message[15:], self.keyShared)
+
+        
         return ""
+
+
+    def PerpareProtocolMessage2(self):
+        self.DHExponent = randint(0, 2000000)
+        self.GenerateDHA()
+        self.SetSessionKey()
+        #TODO: where is sender set?
+        to_encypt = [self.sender, self.RA, self.DHA]
+        encrypted = EncryptAES(to_encypt, self.keyShared)
+        return "PotatoProtocol2" + encrypted + hashlib.sha256(gma()).hexdigest()
+        
+    def EncryptAES(message, key):
+        return AES.new(key, AES.MODE_CBC).encrypt(message)
+
+    def DecryptAES(message, key):
+        return AES.new(key, AES.MODE_CBC).decrypt(message)
+
+    #Generating g^a mod p
+    def GenerateDHA(self):
+        self.DHA = pow(self.g, self.DHExponent, mod = self.p)
 
     # Setting the key for the current session
     # TODO: MODIFY AS YOU SEEM FIT
