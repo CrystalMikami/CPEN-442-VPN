@@ -52,10 +52,6 @@ class Assignment3VPN:
         
         # Creating a protocol object
         self.prtcl = Protocol()
-
-        # ADDED since we want client and server to be identified differently
-        # Set username
-        self.username = None
      
     # Distructor     
     def __del__(self):
@@ -73,16 +69,14 @@ class Assignment3VPN:
     # Handle client mode selection
     def ClientModeSelected(self):
         self.hostName.set("localhost")
-        # ADDED
-        self.username = "Alice"
-        self.prtcl.sender = self.username
+        # ADDED since we want client and server to be identified differently
+        self.prtcl.sender = "Alice"
 
 
     # Handle sever mode selection
     def ServerModeSelected(self):
-        # ADDED
-        self.username = "Bob"
-        self.prtcl.sender = self.username
+        # ADDED since we want client and server to be identified differently
+        self.prtcl.sender = "Bob"
         pass 
 
 
