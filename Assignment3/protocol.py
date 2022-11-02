@@ -104,7 +104,6 @@ class Protocol:
         self.DHExponent = randint(0, 2000000)
         self.GenerateDHA()
         self.SetSessionKey()
-        #TODO: where is sender set?
         to_encypt = [self.sender, self.RA, self.DHA]
         encrypted = EncryptAES(to_encypt, self.keyShared)
         return "PotatoProtocol2" + encrypted + hashlib.sha256(gma()).hexdigest()
