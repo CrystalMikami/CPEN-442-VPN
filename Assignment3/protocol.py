@@ -7,19 +7,21 @@ class Protocol:
         # Keys
         self.keyShared = None
         self.keySession = None
-        # Protocol variables (sender and reciever variables are questionable, no place for user to enter their
-        # identity, maybe we don't need this, ask TA)
-        self.sender = None
-        self.reciever = None
+
+        # Protocol variables
+        self.sender = None # The current user
+        self.reciever = None # The user you are communicating with
         self.RA = None
         self.RB = None
+
         # Sending message variables
-        self.numMsg = None
-        self.MAC = None
+        self.numMsg = 0
+
         # Components needed for DH (random exponent (a), large prime (p), generator (g))
         self.DHExponent = None
         self.p = None
         self.g = None
+
         # Self (DHA, g^a mod p) and other party's (DHB, g^b mod p) Diffie Hellman values
         self.DHA = None
         self.DHB = None
@@ -28,69 +30,48 @@ class Protocol:
     #Protocol functions
 
     # Creating the initial message of your protocol (to be send to the other party to bootstrap the protocol)
-    # Initial message: "Alice (sender's name)", RA (generate a random number)
+    # Initial message: "PotatoProtocol1" + "Alice (sender's name)" + RA (generate a random number)
     # TODO: IMPLEMENT THE LOGIC (MODIFY THE INPUT ARGUMENTS AS YOU SEEM FIT)
     def GetProtocolInitiationMessage(self):
-        # Remember to set self.RA and self.sender
+        # Generate RA
         self.RA = randint(0, 2000000)
         return "PotatoProtocol1" + self.sender + self.RA
 
 
     # Checking if a received message is part of your protocol (called from app.py)
     # Yes if part of protocol, No if it's an encrypted message
-    # Protocol messages can be of the form: 
-    #       "Alice", RA
-    #       E("Bob", RB, g^b mod p, K), H(K|RA)
-    #       E("Alice", g^a mod p, K), H(K|RB)
-    # Encrypted message is of the form:
-    #       E("Alice/Bob", msg, msg#, KS), MAC
+    # Protocol messages are prepended with "PotatoProtocol1/2/3"
+    # Encrypted messages are prepended with "Message"
     # TODO: IMPLMENET THE LOGIC
     def IsMessagePartOfProtocol(self, message):
-        # This will be hard because you're just getting the ciphertext which is just 
-        # a bunch of random letters/numbers (on the bright side, you only need to check
-        # if it's a protocol or an actual message, no need to care about any other types)
-        # Possible ideas:
-        # First message is not encrypted, could just check for letters/numbers
-        # 2nd and 3rd messages, you can check the last few ___ bits (however long the hash is,
-        # assuming that the hash is always the same length) to find the hash, then compute the hash
-        # yourself and verify that it is right (this works because we know both K and RA/RB, and it
-        # is VERY unlikely for a random ciphertext to just perfectly match the hash)
-        # Everything else will just return false (regardless of if it really is an encrypted message or not)
-        # NOTE: I think that because both parties will be using the same code, both users will think of themselves
-        # as user A. Make sure not to confuse the usage of A and B variables (should always use A instead of B 
-        # variables, or else the code will not work properly).
+        # Check if PotatoProtocol is prepended
         return (message[0:14] == "PotatoProtocol")
-        
-
-
 
 
     # Processing protocol message
     # Protocol messages can be of the form: 
-    #       "Alice", RA
-    #       E("Bob", RB, g^b mod p, K), H(K|RA)
-    #       E("Alice", g^a mod p, K), H(K|RB)
+    #       "PotatoProtocol1", "Alice", RA
+    #       "PotatoProtocol2", E("Bob", RB, g^b mod p, K), MAC
+    #       "PotatoProtocol3", E("Alice", g^a mod p, K), MAC
     # TODO: IMPLMENET THE LOGIC (CALL SetSessionKey ONCE YOU HAVE THE KEY ESTABLISHED)
     # THROW EXCEPTION IF AUTHENTICATION FAILS
     def ProcessReceivedProtocolMessage(self, message):
-        # This is where most of the protocol takes place. You will probably need to collaborate with others.
-        # Work with Dylan to find out if his "IsMessagePartOfProtocol()" can help identify which message it is.
+        # This is where most of the protocol takes place.
         #
-        # If the first message is recieved, save as self.reciever and self.RB (This might seem weird but
-        # the user will always think of themselves as user A, thus the other part is always B, this is needed
-        # for the protocol to work properly), then return the second message (you will need to generate and save several
-        # pieces of information to self.____, encrypt the message and compute the hash)
-        # You could collaborate with Ying Qi for the encryption part (decide if you guys want to create two functions for
-        # encryption or just borrow and modify his code)
+        # If the first message is recieved, save the user (Alice/Bob) as self.reciever and RA as self.RA,
+        # then return the second message. The second message will send self.sender, self.RB (that you need
+        # to randomly generate and save) and self.DHB (g^b mod p that you need to calculate and save) that is
+        # encrypted with self.keyShared. Encryption is done using EncryptAndProtectMessage().
         #
-        # If the second or third message is recieved, you will need to decrypt the ciphertext and verify the hashes.
-        # The ciphertext will be a bunch of random letters/numbers (may not always be the same length).
-        # To split between the encrypted message and hash (assuming the hash is always the same size)
-        # you can take the last ___ bits (however long the hash is) of the ciphertext.
-        # Verify the hash by computing your own version and comparing (throw EXCEPTION if needed)
-        # Decrypt the encrypted portion and update self.___ values with the information given. If the second message was 
-        # recieved, return the third message (same process as if first message was recieved). For the third message, just
-        # return "" and call setSessionKey().
+        # If the second message is recieved, decrypt the message using DecryptAndVerifyMessage(). Save the user
+        # (Alice/Bob) as self.reciever, RB as self.RB, g^b mod p as self.DHB, then return the third message. The
+        # third message will send self.sender, and self.DHA (g^a mod p that you need to calculate and save) that is
+        # encrypted with self.keyShared. Encryption is done using EncryptAndProtectMessage().
+        #
+        # If the third message is recieved, decrypt the message using DecryptAndVerifyMessage(). Return "" and
+        # call setSessionKey().
+        #
+        # If the authentication fails at any point, throw an EXCEPTION
         return ""
 
     # Setting the key for the current session
@@ -98,33 +79,34 @@ class Protocol:
     def SetSessionKey(self):
         # Sets session key to (g^b mod p)^a mod p
         self.keySession = pow(self.DHB, self.DHExponent, mod = self.p)
-        # Forget DH exponents
+        # Forget DH exponent
         self.DHExponent = None
         pass
 
-    # Message sending functions
+    # Message functions
 
     # Encrypting messages
     # Encrypted message is of the form:
-    #       E("Alice/Bob", msg, msg#, KS), MAC
+    #       "Message", E("Alice/Bob", msg, msg#, KS), MAC
     # TODO: IMPLEMENT ENCRYPTION WITH THE SESSION KEY (ALSO INCLUDE ANY NECESSARY INFO IN THE ENCRYPTED MESSAGE FOR INTEGRITY PROTECTION)
     # RETURN AN ERROR MESSAGE IF INTEGRITY VERITIFCATION OR AUTHENTICATION FAILS
     def EncryptAndProtectMessage(self, plain_text):
         cipher_text = plain_text
-        # Only for encrypting messages (not protocol)
         # Remember to set self.numMsg (and update it for each message)
-        # Uses a MAC
-        return cipher_text
+        # Encrypt message with KS
+        # Calculate the MAC
+        return "Message" + cipher_text
 
 
     # Decrypting and verifying messages
     # Encrypted message is of the form:
-    #       E("Alice/Bob", msg, msg#, KS), MAC
+    #       "Message", E("Alice/Bob", msg, msg#, KS), MAC
     # TODO: IMPLEMENT DECRYPTION AND INTEGRITY CHECK WITH THE SESSION KEY
     # RETURN AN ERROR MESSAGE IF INTEGRITY VERITIFCATION OR AUTHENTICATION FAILS
     def DecryptAndVerifyMessage(self, cipher_text):
         plain_text = cipher_text
-        # Only for decrypting and verifying messages
-        # Remember to set self.numMsg (and update it for each message)
-        # Uses a MAC
+        # Remove "Message" from the front
+        # Split into E() and MAC
+        # Verify MAC
+        # Decrypt E()
         return plain_text

@@ -157,14 +157,14 @@ class Assignment3VPN:
                 if self.prtcl.IsMessagePartOfProtocol(cipher_text):
                     # Disabling the button to prevent repeated clicks
                     self.secureButton["state"] = "disabled"
-                    # Processing the protocol message
-                    # Added some stuff here so I think everything works smoothly
+                    # Processing and sending the protocol message
                     next = self.prtcl.ProcessReceivedProtocolMessage(cipher_text)
+                    # If there are still protocol messages, send them
+                    # Otherwise authenticated
                     if next != "":
                         self.conn.send(next.encode())
                     else:
                         self.sendButton["state"] = "enable"
-                    # Maybe add exception checks?
 
                 # Otherwise, decrypting and showing the messaage
                 else:
