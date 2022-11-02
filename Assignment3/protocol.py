@@ -1,5 +1,6 @@
 import hashlib
 import random
+import string
 from Crypto.Cipher import AES
 
 class Protocol:
@@ -32,6 +33,10 @@ class Protocol:
         self.DHA = None
         self.DHB = None
         pass
+    
+    def RandomString(self, stringLength):
+        letters = string.ascii_lowercase
+        return ''.join(random.choice(letters) for i in range(stringLength))
 
     # Hashes our key so we can get 256 bits
     def HashKey(self, thingToHash):
@@ -46,7 +51,7 @@ class Protocol:
     # TODO: IMPLEMENT THE LOGIC (MODIFY THE INPUT ARGUMENTS AS YOU SEEM FIT)
     def GetProtocolInitiationMessage(self):
         # Generate RA
-        self.RA = random.randint(0, 2000000)
+        self.RA = self.RandomString(8)
         # Calculate shared key
         self.keyShared = self.HashKey(self.secret)
         return "PotatoProtocol1" + self.sender + self.RA
@@ -75,7 +80,8 @@ class Protocol:
     def PrepareProtocolMessage2(self):
         self.DHExponent = random.randint(0, 2000000)
         self.GenerateDHA()
-        to_encrypt = self.sender + self.RA + self.DHA
+        self.RB = self.RandomString(8)
+        to_encrypt = self.sender + self.RB + self.DHA
         encrypted = self.EncryptAES(to_encrypt, self.keyShared)
         return "PotatoProtocol2" + encrypted + hashlib.sha256(to_encrypt.encode('utf-8')).hexdigest()
 
