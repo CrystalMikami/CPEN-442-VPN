@@ -134,22 +134,23 @@ class Protocol:
             if my_hash != message[-64:]:
                 raise Exception("Authentication failed")
             self.reciever = decrypted[0]
-            self.RB = decrypted[1:7]
-
+            self.RB = decrypted[1:9]
+            self.DHB = decrypted[9:]
+            return self.PrepareProtocolMessage3()
+        elif message[14] == "3":
+            decrypted = self.DecryptAES(message[15:-64], self.keyShared)
+            my_hash = hashlib.sha256(decrypted.encode('utf-8')).hexdigest()
+            if my_hash != message[-64:]:
+                raise Exception("Authentication failed")
+            return ""
 
     
-        
-    #Generating g^a mod p
-    def GenerateDHA(self):
-        self.DHA = pow(self.g, self.DHExponent, mod = self.p)
-
-
     # Setting the key for the current session
     # TODO: MODIFY AS YOU SEEM FIT
     def SetSessionKey(self, base):
         # Sets session key to H(g^ab mod p)
         DHVal = pow(base, self.DHExponent, mod = self.p)
-        self.keySession = self.HashKey(self, DHVal)
+        self.keySession = self.HashKey(DHVal)
 
         # Forget DH exponent
         self.DHExponent = None
