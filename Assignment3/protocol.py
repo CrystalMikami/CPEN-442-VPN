@@ -11,6 +11,7 @@ class Protocol:
         self.secret = None
         self.keyShared = None
         self.keySession = None
+        self.IV = 1
 
         # Protocol variables
         self.sender = None # The current user
@@ -58,32 +59,31 @@ class Protocol:
     # Hashes our key so we can get 256 bits
     def HashKey(self, thingToHash):
         # Hash the thingToHash using SHA-256
-        key = None
-        
+        key = hashlib.sha256(thingToHash.encode('utf-8')).hexdigest()
         return key
 
 
     # Processing protocol message
     # Protocol messages can be of the form: 
-    #       "PotatoProtocol1", "Alice", RA
-    #       "PotatoProtocol2", E("Bob", RB, g^b mod p, K), H(MAC)
-    #       "PotatoProtocol3", E("Alice", g^a mod p, K), H(MAC)
+    #       "PotatoProtocol1", "A", RA
+    #       "PotatoProtocol2", E("B", RB, g^b mod p, K), H("B", RB, g^b mod p)
+    #       "PotatoProtocol3", E("A", g^a mod p, K), H("A", g^a mod p)
     # TODO: IMPLMENET THE LOGIC (CALL SetSessionKey ONCE YOU HAVE THE KEY ESTABLISHED)
     # THROW EXCEPTION IF AUTHENTICATION FAILS
     def ProcessReceivedProtocolMessage(self, message):
         # This is where most of the protocol takes place.
         #
-        # If the first message is recieved, save the user (Alice/Bob) as self.reciever and RA as self.RA,
+        # If the first message is recieved, save the user (A/B) as self.reciever and RA as self.RA,
         # then return the second message. The second message will send self.sender, self.RB (that you need
         # to randomly generate and save) and self.DHB (g^b mod p that you need to calculate and save) that is
-        # encrypted with self.keyShared. Encryption is done using EncryptAndProtectMessage().
+        # encrypted with self.keyShared.
         #
-        # If the second message is recieved, decrypt the message using DecryptAndVerifyMessage(). Save the user
-        # (Alice/Bob) as self.reciever, RB as self.RB, g^b mod p as self.DHB, then return the third message. The
+        # If the second message is recieved, decrypt and verify the message. Save the user
+        # (A/B) as self.reciever, RB as self.RB, g^b mod p as self.DHB, then return the third message. The
         # third message will send self.sender, and self.DHA (g^a mod p that you need to calculate and save) that is
-        # encrypted with self.keyShared. Encryption is done using EncryptAndProtectMessage().
+        # encrypted with self.keyShared. Call setSessionKey().
         #
-        # If the third message is recieved, decrypt the message using DecryptAndVerifyMessage(). Return "" and
+        # If the third message is recieved, decrypt and verify the message. Return "" and
         # call setSessionKey().
         #
         # If the authentication fails at any point, throw an EXCEPTION
@@ -108,7 +108,7 @@ class Protocol:
         self.GenerateDHA()
         to_encrypt = [self.sender, self.RA, self.DHA]
         encrypted = EncryptAES(to_encrypt, self.keyShared)
-        return "PotatoProtocol2" + encrypted + hashlib.sha256(gma()).hexdigest()
+        return "PotatoProtocol2" + encrypted + hashlib.sha256(to_encrypt.encode('utf-8')).hexdigest()
         
     def EncryptAES(message, key):
         return AES.new(key, AES.MODE_CBC).encrypt(message)
@@ -116,9 +116,11 @@ class Protocol:
     def DecryptAES(message, key):
         return AES.new(key, AES.MODE_CBC).decrypt(message)
 
+
     #Generating g^a mod p
     def GenerateDHA(self):
         self.DHA = pow(self.g, self.DHExponent, mod = self.p)
+
 
     # Setting the key for the current session
     # TODO: MODIFY AS YOU SEEM FIT
@@ -126,15 +128,17 @@ class Protocol:
         # Sets session key to H((g^b mod p)^a mod p)
         DHVal = pow(self.DHB, self.DHExponent, mod = self.p)
         self.keySession = self.HashKey(self, DHVal)
+
         # Forget DH exponent
         self.DHExponent = None
         pass
+
 
     # Message functions
 
     # Encrypting messages
     # Encrypted message is of the form:
-    #       "Message", E("Alice/Bob", msg, msg#, KS), H(MAC)
+    #       "Message", E("A/B", msg, msg#, KS), H("A/B", msg, msg#)
     # TODO: IMPLEMENT ENCRYPTION WITH THE SESSION KEY (ALSO INCLUDE ANY NECESSARY INFO IN THE ENCRYPTED MESSAGE FOR INTEGRITY PROTECTION)
     # RETURN AN ERROR MESSAGE IF INTEGRITY VERITIFCATION OR AUTHENTICATION FAILS
     def EncryptAndProtectMessage(self, plain_text):
@@ -147,7 +151,7 @@ class Protocol:
 
     # Decrypting and verifying messages
     # Encrypted message is of the form:
-    #       "Message", E("Alice/Bob", msg, msg#, KS), H(MAC)
+    #       "Message", E("A/B", msg, msg#, KS), H("A/B", msg, msg#)
     # TODO: IMPLEMENT DECRYPTION AND INTEGRITY CHECK WITH THE SESSION KEY
     # RETURN AN ERROR MESSAGE IF INTEGRITY VERITIFCATION OR AUTHENTICATION FAILS
     def DecryptAndVerifyMessage(self, cipher_text):
