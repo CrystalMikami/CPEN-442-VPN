@@ -1,4 +1,5 @@
 import hashlib
+import random
 from Crypto.Cipher import AES
 from getmac import get_mac_address as gma
 
@@ -22,6 +23,8 @@ class Protocol:
 
         # Components needed for DH (random exponent (a), large prime (p), generator (g))
         self.DHExponent = None
+
+        # Set p and g
         self.p = None
         self.g = None
 
@@ -37,9 +40,9 @@ class Protocol:
     # TODO: IMPLEMENT THE LOGIC (MODIFY THE INPUT ARGUMENTS AS YOU SEEM FIT)
     def GetProtocolInitiationMessage(self):
         # Generate RA
-        self.RA = randint(0, 2000000)
+        self.RA = random.randint(0, 2000000)
         # Calculate shared key
-        self.keyShared = self.hashKey(self, self.secret)
+        self.keyShared = self.HashKey(self, self.secret)
         return "PotatoProtocol1" + self.sender + self.RA
 
 
@@ -53,7 +56,7 @@ class Protocol:
         return (message[0:14] == "PotatoProtocol")
 
     # Hashes our key so we can get 256 bits
-    def hashKey(self, thingToHash):
+    def HashKey(self, thingToHash):
         # Hash the thingToHash using SHA-256
         key = None
         
@@ -87,12 +90,12 @@ class Protocol:
 
         if not (self.IsMessagePartOfProtocol(message)):
             raise Exception("Message is not part of protocol")
+
         if message[14] == "1":
-            self.keyShared = self.hashKey(self, self.secret)
+            self.keyShared = self.HashKey(self, self.secret)
             self.reciever = message[15]
             self.RB = message[16:]
-            return PrepareProtocolMessage2()
-            
+            return self.PrepareProtocolMessage2(self)
         elif message[14] == "2":
             decrypted = DecryptAES(message[15:], self.keyShared)
 
@@ -100,12 +103,11 @@ class Protocol:
         return ""
 
 
-    def PerpareProtocolMessage2(self):
-        self.DHExponent = randint(0, 2000000)
+    def PrepareProtocolMessage2(self):
+        self.DHExponent = random.randint(0, 2000000)
         self.GenerateDHA()
-        self.SetSessionKey()
-        to_encypt = [self.sender, self.RA, self.DHA]
-        encrypted = EncryptAES(to_encypt, self.keyShared)
+        to_encrypt = [self.sender, self.RA, self.DHA]
+        encrypted = EncryptAES(to_encrypt, self.keyShared)
         return "PotatoProtocol2" + encrypted + hashlib.sha256(gma()).hexdigest()
         
     def EncryptAES(message, key):
@@ -123,7 +125,7 @@ class Protocol:
     def SetSessionKey(self):
         # Sets session key to H((g^b mod p)^a mod p)
         DHVal = pow(self.DHB, self.DHExponent, mod = self.p)
-        self.keySession = self.hashKey(self, DHVal)
+        self.keySession = self.HashKey(self, DHVal)
         # Forget DH exponent
         self.DHExponent = None
         pass
