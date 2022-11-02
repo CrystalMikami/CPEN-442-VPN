@@ -52,6 +52,10 @@ class Assignment3VPN:
         
         # Creating a protocol object
         self.prtcl = Protocol()
+
+        # ADDED since we want client and server to be identified differently
+        # Set username
+        self.username = None
      
     # Distructor     
     def __del__(self):
@@ -69,11 +73,17 @@ class Assignment3VPN:
     # Handle client mode selection
     def ClientModeSelected(self):
         self.hostName.set("localhost")
+        # ADDED
+        self.username = "Alice"
+        self.prtcl.sender = self.username
 
 
     # Handle sever mode selection
     def ServerModeSelected(self):
-        pass
+        # ADDED
+        self.username = "Bob"
+        self.prtcl.sender = self.username
+        pass 
 
 
     # Create a TCP connection between the client and the server
@@ -187,8 +197,6 @@ class Assignment3VPN:
         # TODO: THIS IS WHERE YOU SHOULD IMPLEMENT THE START OF YOUR MUTUAL AUTHENTICATION AND KEY ESTABLISHMENT PROTOCOL, MODIFY AS YOU SEEM FIT
         self.prtcl.keyShared = self.sharedSecret
         init_message = self.prtcl.GetProtocolInitiationMessage()
-        # self._SendMessage(init_message)
-        # Remove the above, but do smt similar
         self.conn.send(init_message.encode())
 
 
