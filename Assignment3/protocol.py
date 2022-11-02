@@ -7,6 +7,7 @@ class Protocol:
     # TODO: MODIFY ARGUMENTS AND LOGIC AS YOU SEEM FIT
     def __init__(self):
         # Keys
+        self.secret = None
         self.keyShared = None
         self.keySession = None
 
@@ -37,6 +38,8 @@ class Protocol:
     def GetProtocolInitiationMessage(self):
         # Generate RA
         self.RA = randint(0, 2000000)
+        # Calculate shared key
+        self.keyShared = self.hashKey(self, self.secret)
         return "PotatoProtocol1" + self.sender + self.RA
 
 
@@ -48,6 +51,13 @@ class Protocol:
     def IsMessagePartOfProtocol(self, message):
         # Check if PotatoProtocol is prepended
         return (message[0:14] == "PotatoProtocol")
+
+    # Hashes our key so we can get 256 bits
+    def hashKey(self, thingToHash):
+        # Hash the thingToHash using SHA-256
+        key = None
+        
+        return key
 
 
     # Processing protocol message
@@ -78,6 +88,7 @@ class Protocol:
         if not (self.IsMessagePartOfProtocol(message)):
             raise Exception("Message is not part of protocol")
         if message[14] == "1":
+            self.keyShared = self.hashKey(self, self.secret)
             self.reciever = message[15]
             self.RB = message[16:]
             return PrepareProtocolMessage2()
@@ -111,8 +122,9 @@ class Protocol:
     # Setting the key for the current session
     # TODO: MODIFY AS YOU SEEM FIT
     def SetSessionKey(self):
-        # Sets session key to (g^b mod p)^a mod p
-        self.keySession = pow(self.DHB, self.DHExponent, mod = self.p)
+        # Sets session key to H((g^b mod p)^a mod p)
+        DHVal = pow(self.DHB, self.DHExponent, mod = self.p)
+        self.keySession = self.hashKey(self, DHVal)
         # Forget DH exponent
         self.DHExponent = None
         pass
