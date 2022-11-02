@@ -80,9 +80,6 @@ class Protocol:
         if message[14] == "1":
             self.reciever = message[15]
             self.RB = message[16:]
-            #TODO: need g and p in message
-            self.p
-            self.g
             return PrepareProtocolMessage2()
             
         elif message[14] == "2":
