@@ -78,8 +78,8 @@ class Protocol:
 
         message_in_binary = plain_text.encode('utf-8')
 
-        self.keySession = b'Sixteen byte key'
-        self.RA = b'ra'
+        #self.keySession = b'Sixteen byte key'
+        #self.RA = b'ra'
         key = self.keySession
 
         # I assume that the nonce will be wither one of RA or RB
