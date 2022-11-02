@@ -79,11 +79,17 @@ class Protocol:
 
     def PrepareProtocolMessage2(self):
         self.DHExponent = random.randint(0, 2000000)
-        self.GenerateDHA()
+        self.DHB = pow(self.g, self.DHExponent, mod = self.p)
         self.RB = self.RandomString(8)
-        to_encrypt = self.sender + self.RB + self.DHA
+        to_encrypt = self.sender + self.RB + self.DHB
         encrypted = self.EncryptAES(to_encrypt, self.keyShared)
         return "PotatoProtocol2" + encrypted + hashlib.sha256(to_encrypt.encode('utf-8')).hexdigest()
+
+    def PrepareProtocolMessage3(self):
+        self.DHA = pow(self.g, self.DHExponent, mod = self.p)
+        to_encrypt = self.sender + self.DHA
+        encrypted = self.EncryptAES(to_encrypt, self.keyShared)
+        return "PotatoProtocol3" + encrypted + hashlib.sha256(to_encrypt.encode('utf-8')).hexdigest()
 
     # Processing protocol message
     # Protocol messages can be of the form: 
@@ -116,7 +122,7 @@ class Protocol:
         if message[14] == "1":
             self.keyShared = self.HashKey(self.secret)
             self.reciever = message[15]
-            self.RB = message[16:]
+            self.RA = message[16:]
             return self.PrepareProtocolMessage2()
         elif message[14] == "2":
             decrypted = self.DecryptAES(message[15:-64], self.keyShared)
@@ -124,14 +130,13 @@ class Protocol:
             if my_hash != message[-64:]:
                 raise Exception("Authentication failed")
             self.reciever = decrypted[0]
-            self.RB = decrypted[1:7]
+            self.RB = decrypted[1:9]
+            self.DHB = decrypted[9:]
+
 
 
     
         
-    #Generating g^a mod p
-    def GenerateDHA(self):
-        self.DHA = pow(self.g, self.DHExponent, mod = self.p)
 
 
     # Setting the key for the current session
