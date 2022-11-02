@@ -38,6 +38,8 @@ class Protocol:
     def GetProtocolInitiationMessage(self):
         # Generate RA
         self.RA = randint(0, 2000000)
+        # Calculate shared key
+        self.keyShared = self.hashKey(self, self.secret)
         return "PotatoProtocol1" + self.sender + self.RA
 
 
@@ -53,7 +55,8 @@ class Protocol:
     # Hashes our key so we can get 256 bits
     def hashKey(self, thingToHash):
         # Hash the thingToHash using SHA-256
-
+        key = None
+        
         return key
 
 
@@ -85,6 +88,7 @@ class Protocol:
         if not (self.IsMessagePartOfProtocol(message)):
             raise Exception("Message is not part of protocol")
         if message[14] == "1":
+            self.keyShared = self.hashKey(self, self.secret)
             self.reciever = message[15]
             self.RB = message[16:]
             #TODO: need g and p in message
@@ -122,7 +126,8 @@ class Protocol:
     # TODO: MODIFY AS YOU SEEM FIT
     def SetSessionKey(self):
         # Sets session key to H((g^b mod p)^a mod p)
-        self.keySession = pow(self.DHB, self.DHExponent, mod = self.p)
+        DHVal = pow(self.DHB, self.DHExponent, mod = self.p)
+        self.keySession = self.hashKey(self, DHVal)
         # Forget DH exponent
         self.DHExponent = None
         pass
