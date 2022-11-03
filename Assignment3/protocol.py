@@ -4,6 +4,9 @@ import string
 from Crypto.Cipher import AES
 from base64 import b64encode
 from base64 import b64decode
+import base64
+from Crypto.Util.Padding import pad
+from Crypto.Util.Padding import unpad
 
 class Protocol:
     # Initializer (Called from app.py)
@@ -76,7 +79,7 @@ class Protocol:
 
     
     def EncryptAES(self, message, key):
-        return AES.new(key, AES.MODE_CBC).encrypt(message) # maybe decode??
+        return AES.new(key, AES.MODE_CBC).encrypt(pad(message.encode(), 16)) # maybe decode??
 
 
     def DecryptAES(self, message, key):
@@ -88,8 +91,10 @@ class Protocol:
         self.DHExponent = random.randint(0, 15)
         self.DHB = pow(self.g, self.DHExponent, mod = self.p)
         self.RB = self.RandomString(8)
-        to_encrypt = self.sender + self.RB + self.DHB
-        encrypted = self.EncryptAES(to_encrypt, self.keyShared)
+        to_encrypt = self.sender + self.RB + str(self.DHB)
+        print(self.keyShared)
+        print(bytes.fromhex(self.keyShared))
+        encrypted = self.EncryptAES(to_encrypt, bytes.fromhex(self.keyShared))
         print(to_encrypt)
         return "PotatoProtocol2" + encrypted + hashlib.sha256(to_encrypt.encode('utf-8')).hexdigest()
 
