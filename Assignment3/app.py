@@ -125,6 +125,7 @@ class Assignment3VPN:
     def _AcceptConnections(self):
         try:
             # Accepting the connection
+            self.prtcl.secret = self.sharedSecret # ADDED THIS -----------------------------------------------------
             self._AppendLog("SERVER: Waiting for connections...")
             self.conn, self.addr = self.s.accept()
             self._AppendLog("SERVER: Received connection from {}. You can now send/receive messages".format(self.addr))

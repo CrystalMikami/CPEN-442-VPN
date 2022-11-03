@@ -84,6 +84,7 @@ class Protocol:
 
 
     def PrepareProtocolMessage2(self):
+        print("preparing2")
         self.DHExponent = random.randint(0, 15)
         self.DHB = pow(self.g, self.DHExponent, mod = self.p)
         self.RB = self.RandomString(8)
@@ -131,11 +132,15 @@ class Protocol:
 
         if message.decode()[14] == "1":
             print("It should be here")
-            self.keyShared = self.HashKey(self.secret)
+            print(self.secret)
+            self.keyShared = self.HashKey(self.secret.get())
+            print("AAAAAAAAA")
             self.reciever = message.decode()[15]
             self.RA = message.decode()[16:]
+            print("here????")
             return self.PrepareProtocolMessage2()
         elif message.decode()[14] == "2":
+            print("its in two!")
             decrypted = self.DecryptAES(message.decode()[15:-64], self.keyShared)
             my_hash = hashlib.sha256(decrypted.encode('utf-8')).hexdigest()
             if my_hash != message.decode()[-64:]:
@@ -145,6 +150,7 @@ class Protocol:
             self.DHB = decrypted[9:]
             return self.PrepareProtocolMessage3()
         elif message.decode()[14] == "3":
+            print("its in three!")
             decrypted = self.DecryptAES(message.decode()[15:-64], self.keyShared)
             my_hash = hashlib.sha256(decrypted.encode('utf-8')).hexdigest()
             if my_hash != message.decode()[-64:]:
