@@ -162,7 +162,10 @@ class Assignment3VPN:
                     # If there are still protocol messages, send them
                     # Otherwise authenticated
                     if next != "":
+                        self._AppendLog("HERE")
+                        print(next)
                         self.conn.send(next.encode())
+                        self._AppendLog("HERE2")
                     else:
                         self.sendButton["state"] = "enable"
 

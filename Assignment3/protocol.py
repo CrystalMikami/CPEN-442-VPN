@@ -16,8 +16,8 @@ class Protocol:
         self.IV = 1
 
         # Protocol variables
-        self.sender = None # The current user
-        self.reciever = None # The user you are communicating with
+        self.sender = "None" # The current user
+        self.reciever = "None1" # The user you are communicating with
         self.RA = None
         self.RB = None
 
@@ -28,8 +28,8 @@ class Protocol:
         self.DHExponent = None
 
         # Set p and g
-        self.p = None
-        self.g = None
+        self.p = 10043
+        self.g = 2
 
         # Self (DHA, g^a mod p) and other party's (DHB, g^b mod p) Diffie Hellman values
         self.DHA = None
@@ -59,10 +59,10 @@ class Protocol:
     # TODO: IMPLEMENT THE LOGIC (MODIFY THE INPUT ARGUMENTS AS YOU SEEM FIT)
     def GetProtocolInitiationMessage(self):
         # Generate RA
-        self.RA = self.RandomString(8)
+        self.RA = self.RandomString(8).encode()
         # Calculate shared key
-        self.keyShared = self.HashKey(self.secret)
-        return "PotatoProtocol1" + self.sender + self.RA
+        self.keyShared = self.HashKey(self.secret.get())
+        return "PotatoProtocol1" + self.sender + self.RA.decode()
 
 
     # Checking if a received message is part of your protocol (called from app.py)
@@ -72,11 +72,11 @@ class Protocol:
     # TODO: IMPLMENET THE LOGIC
     def IsMessagePartOfProtocol(self, message):
         # Check if PotatoProtocol is prepended
-        return (message[0:14] == "PotatoProtocol")
+        return (message.decode()[0:14] == "PotatoProtocol")
 
     
     def EncryptAES(self, message, key):
-        return AES.new(key, AES.MODE_CBC).encrypt(message)
+        return AES.new(key, AES.MODE_CBC).encrypt(message) # maybe decode??
 
 
     def DecryptAES(self, message, key):
@@ -84,19 +84,21 @@ class Protocol:
 
 
     def PrepareProtocolMessage2(self):
-        self.DHExponent = random.randint(0, 2000000)
+        self.DHExponent = random.randint(0, 15)
         self.DHB = pow(self.g, self.DHExponent, mod = self.p)
         self.RB = self.RandomString(8)
         to_encrypt = self.sender + self.RB + self.DHB
         encrypted = self.EncryptAES(to_encrypt, self.keyShared)
+        print(to_encrypt)
         return "PotatoProtocol2" + encrypted + hashlib.sha256(to_encrypt.encode('utf-8')).hexdigest()
 
     def PrepareProtocolMessage3(self):
-        self.DHExponent = random.randint(0, 2000000)
+        self.DHExponent = random.randint(0, 15)
         self.DHA = pow(self.g, self.DHExponent, mod = self.p)
         self.SetSessionKey(self, self.DHB)
         to_encrypt = self.sender + self.DHA
         encrypted = self.EncryptAES(to_encrypt, self.keyShared)
+        print(to_encrypt)
         return "PotatoProtocol3" + encrypted + hashlib.sha256(to_encrypt.encode('utf-8')).hexdigest()
 
     # Processing protocol message
@@ -127,24 +129,25 @@ class Protocol:
         if not (self.IsMessagePartOfProtocol(message)):
             raise Exception("Message is not part of protocol")
 
-        if message[14] == "1":
+        if message.decode()[14] == "1":
+            print("It should be here")
             self.keyShared = self.HashKey(self.secret)
-            self.reciever = message[15]
-            self.RA = message[16:]
+            self.reciever = message.decode()[15]
+            self.RA = message.decode()[16:]
             return self.PrepareProtocolMessage2()
-        elif message[14] == "2":
-            decrypted = self.DecryptAES(message[15:-64], self.keyShared)
+        elif message.decode()[14] == "2":
+            decrypted = self.DecryptAES(message.decode()[15:-64], self.keyShared)
             my_hash = hashlib.sha256(decrypted.encode('utf-8')).hexdigest()
-            if my_hash != message[-64:]:
+            if my_hash != message.decode()[-64:]:
                 raise Exception("Authentication failed")
             self.reciever = decrypted[0]
             self.RB = decrypted[1:9]
             self.DHB = decrypted[9:]
             return self.PrepareProtocolMessage3()
-        elif message[14] == "3":
-            decrypted = self.DecryptAES(message[15:-64], self.keyShared)
+        elif message.decode()[14] == "3":
+            decrypted = self.DecryptAES(message.decode()[15:-64], self.keyShared)
             my_hash = hashlib.sha256(decrypted.encode('utf-8')).hexdigest()
-            if my_hash != message[-64:]:
+            if my_hash != message.decode()[-64:]:
                 raise Exception("Authentication failed")
             self.DHA = decrypted[9:]
             self.SetSessionKey(self, self.DHA)
