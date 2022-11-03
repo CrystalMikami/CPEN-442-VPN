@@ -5,6 +5,7 @@ from Crypto.Cipher import AES
 from base64 import b64encode
 from base64 import b64decode
 
+
 class Protocol:
     # Initializer (Called from app.py)
     # TODO: MODIFY ARGUMENTS AND LOGIC AS YOU SEEM FIT
@@ -16,8 +17,8 @@ class Protocol:
         self.IV = 1
 
         # Protocol variables
-        self.sender = None # The current user
-        self.reciever = None # The user you are communicating with
+        self.sender = ''  # The current user
+        self.reciever = ''  # The user you are communicating with
         self.RA = None
         self.RB = None
 
@@ -35,7 +36,6 @@ class Protocol:
         self.DHA = None
         self.DHB = None
         pass
-    
 
     # Helper functions
 
@@ -44,15 +44,13 @@ class Protocol:
         choices = string.ascii_uppercase + string.digits
         return ''.join(random.choice(choices) for i in range(stringLength))
 
-
     # Hashes our key so we can get 256 bits
     def HashKey(self, thingToHash):
         # Hash the thingToHash using SHA-256
         key = hashlib.sha256(thingToHash.encode('utf-8')).hexdigest()
         return key
 
-
-    #Protocol functions
+    # Protocol functions
 
     # Creating the initial message of your protocol (to be send to the other party to bootstrap the protocol)
     # Initial message: "PotatoProtocol1" + "Alice (sender's name)" + RA (generate a random number)
@@ -61,9 +59,9 @@ class Protocol:
         # Generate RA
         self.RA = self.RandomString(8)
         # Calculate shared key
-        self.keyShared = self.HashKey(self.secret)
+        self.keyShared = self.HashKey(str(self.secret))
+        print('Initialization msg - self.RA:' + self.RA)
         return "PotatoProtocol1" + self.sender + self.RA
-
 
     # Checking if a received message is part of your protocol (called from app.py)
     # Yes if part of protocol, No if it's an encrypted message
@@ -74,33 +72,31 @@ class Protocol:
         # Check if PotatoProtocol is prepended
         return (message[0:14] == "PotatoProtocol")
 
-    
     def EncryptAES(self, message, key):
         return AES.new(key, AES.MODE_CBC).encrypt(message)
-
 
     def DecryptAES(self, message, key):
         return AES.new(key, AES.MODE_CBC).decrypt(message)
 
-
     def PrepareProtocolMessage2(self):
-        self.DHExponent = random.randint(0, 2000000)
-        self.DHB = pow(self.g, self.DHExponent, mod = self.p)
+        self.DHExponent = 31415926541 #DHExponent must be prime
+        self.DHB = pow(self.g, self.DHExponent, mod=self.p)
         self.RB = self.RandomString(8)
+        print('Msg2 - cooking self.RB:' + self.RB)
         to_encrypt = self.sender + self.RB + self.DHB
         encrypted = self.EncryptAES(to_encrypt, self.keyShared)
         return "PotatoProtocol2" + encrypted + hashlib.sha256(to_encrypt.encode('utf-8')).hexdigest()
 
     def PrepareProtocolMessage3(self):
-        self.DHExponent = random.randint(0, 2000000)
-        self.DHA = pow(self.g, self.DHExponent, mod = self.p)
+        self.DHExponent = 31415926541 #DHExponent must be prime
+        self.DHA = pow(self.g, self.DHExponent, mod=self.p)
         self.SetSessionKey(self, self.DHB)
         to_encrypt = self.sender + self.DHA
         encrypted = self.EncryptAES(to_encrypt, self.keyShared)
         return "PotatoProtocol3" + encrypted + hashlib.sha256(to_encrypt.encode('utf-8')).hexdigest()
 
     # Processing protocol message
-    # Protocol messages can be of the form: 
+    # Protocol messages can be of the form:
     #       "PotatoProtocol1", "A", RA
     #       "PotatoProtocol2", E("B", RB, g^b mod p, K), H("B", RB, g^b mod p)
     #       "PotatoProtocol3", E("A", g^a mod p, K), H("A", g^a mod p)
@@ -131,6 +127,7 @@ class Protocol:
             self.keyShared = self.HashKey(self.secret)
             self.reciever = message[15]
             self.RA = message[16:]
+            print('Recorded - self.RA:' + self.RA)
             return self.PrepareProtocolMessage2()
         elif message[14] == "2":
             decrypted = self.DecryptAES(message[15:-64], self.keyShared)
@@ -139,6 +136,7 @@ class Protocol:
                 raise Exception("Authentication failed")
             self.reciever = decrypted[0]
             self.RB = decrypted[1:9]
+            print('Recorded - self.RA:' + self.RA)
             self.DHB = decrypted[9:]
             return self.PrepareProtocolMessage3()
         elif message[14] == "3":
@@ -150,21 +148,19 @@ class Protocol:
             self.SetSessionKey(self, self.DHA)
             return ""
 
-    
     # Setting the key for the current session
     # TODO: MODIFY AS YOU SEEM FIT
     def SetSessionKey(self, base):
         # Sets session key to H(g^ab mod p)
-        DHVal = pow(base, self.DHExponent, mod = self.p)
+        DHVal = pow(base, self.DHExponent, mod=self.p)
         self.keySession = self.HashKey(DHVal)
 
         # Forget DH exponent
         self.DHExponent = None
         pass
 
-
     # Message functions
-    
+
     # Encrypting messages
     # Encrypted message is of the form:
     #       E("Alice/Bob", msg, msg#, KS), MAC
@@ -175,22 +171,31 @@ class Protocol:
         # Only for encrypting messages (not protocol)
         # Remember to set self.numMsg (and update it for each message)
         # Uses a hash (SHA 256)
+        #checking that all the required fields are filled!
+        #print('self.RA:' + self.RA)
+        #print('self.RB:' + self.RB)
+        #print('self.RA:' + self.RA)
+        #print('self.RB:' + self.RB)
+        #print('got to encrypt!')
 
         message_in_binary = plain_text.encode('utf-8')
+        print('past the encoding')
 
-        #self.keySession = b'Sixteen byte key' here only for testing purposes
-        #self.RA = b'ra'
+        # self.keySession = b'Sixteen byte key' here only for testing purposes
+        # self.RA = b'ra'
         key = self.keySession
+        print('set the key')
 
         # I assume that the nonce will be wither one of RA or RB
         # But I am not sure whether both instances of protocol have both RA and RB,
         # To make sure, when establishing the protocol, we did record both RA and RB, right?
-        cipher = AES.new(key, AES.MODE_EAX, nonce=self.RA)
+        cipher = AES.new(key, AES.MODE_EAX, nonce=b64decode(self.RA))
+        print('computed the cipher')
 
-        ciphertext, tag = cipher.encrypt_and_digest(message_in_binary) #ciphertext is binary
-        string_ciphertext = b64encode(ciphertext).decode('utf-8')      #string_ciphertext is string
+        ciphertext, tag = cipher.encrypt_and_digest(message_in_binary)  # ciphertext is binary
+        string_ciphertext = b64encode(ciphertext).decode('utf-8')  # string_ciphertext is string
 
-        hash_ciphertext = hashlib.sha256(ciphertext).hexdigest()       #hashed the binary of ciphertext (in binary)
+        hash_ciphertext = hashlib.sha256(ciphertext).hexdigest()  # hashed the binary of ciphertext (in binary)
 
         self.numMsg = self.numMsg + 1
         return 'Message' + string_ciphertext + hash_ciphertext
@@ -206,21 +211,21 @@ class Protocol:
         # Remember to set self.numMsg (and update it for each message)
         # Uses a hash
 
+        print('reached decryption')
+
         total_length = len(cipher_text)
         hash = cipher_text[total_length - 64: total_length]
         ciphertext_without_hash = cipher_text[7: total_length - 64]
 
         cipher_binary = b64decode(ciphertext_without_hash)
 
-        cipher = AES.new(self.keySession, AES.MODE_EAX, nonce=self.RA)
+        cipher = AES.new(self.keySession, AES.MODE_EAX, nonce=b64decode(self.RA))
         plaintext = cipher.decrypt(cipher_binary)
 
         rehash = hashlib.sha256(cipher_binary).hexdigest()
 
         if hash.decode('utf-8') == rehash:
-
             self.numMsg = self.numMsg + 1
             return plaintext
         else:
             raise Exception("Integrity compromised")
-
